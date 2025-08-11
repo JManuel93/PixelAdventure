@@ -1,55 +1,41 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 public class MovimientoPlayer : MonoBehaviour
 {
-   public float velocidad = 5f;
-   public Rigidbody2D rg;
-   public Vector2 entrada;
-   Animator animator;
+    public float velocidad = 5f;
+    public float fuerzaSalto = 7f;
+    public Transform sueloCheck;
+    public LayerMask Arboles;
 
+    private Rigidbody2D rb;
+    private float direccionX;
+    private bool enSuelo;
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        rg = GetComponent<Rigidbody2D>();
-        animator = GetComponent<Animator>();
+        rb = GetComponent<Rigidbody2D>();
     }
 
-    // Update is called once per frame
     void Update()
     {
-        rg.linearVelocity = entrada * velocidad;
+        // Verifica si está tocando el suelo
+        enSuelo = Physics2D.OverlapCircle(sueloCheck.position, 0.1f, Arboles);
+
+        // Aplica el movimiento en X
+        rb.linearVelocity = new Vector2(direccionX * velocidad, rb.linearVelocity.y);
     }
 
-    public void Morverse(InputAction.CallbackContext contexto){
+    // Método llamado desde el PlayerInput (eventos)
+    public void Movimiento(UnityEngine.InputSystem.InputAction.CallbackContext context)
+    {
+        direccionX = context.ReadValue<float>();
+    }
 
-        animator.SetBool("estaCaminando", true);
-
-        Vector2 valorEntrada = contexto.ReadValue<Vector2>();
-
-        // Determinar el eje dominante
-        if (Mathf.Abs(valorEntrada.x) > Mathf.Abs(valorEntrada.y))
+    public void Salto(UnityEngine.InputSystem.InputAction.CallbackContext context)
+    {
+        if (context.performed && enSuelo)
         {
-            // Movimiento horizontal
-            entrada = new Vector2(Mathf.Sign(valorEntrada.x), 0);
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, fuerzaSalto);
         }
-        else if (Mathf.Abs(valorEntrada.y) > 0)
-        {
-            // Movimiento vertical
-            entrada = new Vector2(0, Mathf.Sign(valorEntrada.y));
-        }
-        else
-        {
-            entrada = Vector2.zero;
-        }
-
-        animator.SetFloat("entradaX", entrada.x);
-        animator.SetFloat("entradaY", entrada.y);
-
-        if(contexto.canceled){
-               animator.SetBool("estaCaminando", false);
-        }
-
-}
+    }
 }
